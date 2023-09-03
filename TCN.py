@@ -1,7 +1,5 @@
 import json
-import numpy as np
 from gensim.models import Word2Vec
-import itertools
 import numpy as np
 from keras.layers import *
 from keras.models import *

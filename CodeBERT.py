@@ -1,15 +1,10 @@
 import json
 import numpy as np
-import itertools
-import numpy as np
-from keras.layers import *
-from keras.models import *
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay, classification_report
 from sklearn.model_selection import train_test_split
 from transformers import TFRobertaModel
 import imblearn.over_sampling as oversample
-from sklearn.metrics import balanced_accuracy_score
 import tensorflow as tf
 from tensorflow.keras.optimizers import Adam, SGD
 from transformers import AutoTokenizer

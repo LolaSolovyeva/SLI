@@ -1,9 +1,5 @@
 import json
 import numpy as np
-import itertools
-import numpy as np
-from keras.layers import *
-from keras.models import *
 from matplotlib import pyplot as plt
 from sklearn.metrics import ConfusionMatrixDisplay
 from sklearn.model_selection import train_test_split

@@ -1,7 +1,5 @@
 import json
-import numpy as np
 from gensim.models import Word2Vec
-import itertools
 import numpy as np
 from keras.layers import *
 from keras.models import *
@@ -11,7 +9,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import imblearn.over_sampling as oversample
 import itertools
-import tcn
 
 with open('data.json') as json_file:
     data = json.load(json_file)
