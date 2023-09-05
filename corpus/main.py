@@ -13,12 +13,21 @@ ROOT_DIR = Path(__file__).parent
 
 
 def main():
-    projects = get_most_popular_projects(50, "fa998b797a5300a240e2b4c042f9a438ab91c7f5")
+    projects = get_most_popular_projects(1, "fa998b797a5300a240e2b4c042f9a438ab91c7f5")
+    result = {}
     for project_name in projects:
         project = PyPIProject(project_name, True, True)
         if len(project.releases) > 0:
             for release in project.releases:
-                release.download_files(project.releases_version)
+                result = release.download_files()
+
+    for version in result:
+        result[version] = list(result[version])
+    json_object = json.dumps(result, indent=4)
+
+    # Writing to sample.json
+    with open("all_data.json", "w") as outfile:
+        outfile.write(json_object)
 
 
 if __name__ == '__main__':

@@ -1,14 +1,15 @@
 import json
-import os
 from datetime import datetime
 from typing import Any
 from urllib import request
 import re
 from pathlib import Path
 import tarfile
-from utils import is_python_file
+from utils import is_python_file, get_cleanData
 import zipfile
-import shutil
+import ast
+import asttokens
+import vermin
 
 patternNumeric = re.compile("[0-9]+\\.[0-9]+")
 patternLiteral = re.compile("cp[0-9]+")
@@ -42,6 +43,29 @@ PYTHON_RELEASES = {shortned: actual for shortned, actual in {
     "cp311": "3.11"
 }.items()}
 
+PYTHON_VERSIONS = {shortned: actual for shortned, actual in {
+    "2.0": set(),
+    "2.1": set(),
+    "2.2": set(),
+    "2.3": set(),
+    "2.4": set(),
+    "2.5": set(),
+    "2.6": set(),
+    "2.7": set(),
+    "3.0": set(),
+    "3.1": set(),
+    "3.2": set(),
+    "3.3": set(),
+    "3.4": set(),
+    "3.5": set(),
+    "3.6": set(),
+    "3.7": set(),
+    "3.8": set(),
+    "3.9": set(),
+    "3.10": set(),
+    "3.11": set()
+}.items()}
+
 
 class Release:
     def __init__(self, project_name: str, version: str, files: list[dict[str, Any]],
@@ -57,23 +81,43 @@ class Release:
         self.upload_date = datetime.fromisoformat(sdist_file['upload_time'])
         self.url: str = sdist_file['url']
 
-    def download_files(self, languageVersion):
+    def download_files(self):
         out_dir = EXAMPLES_DIR / self.project_name / self.version
-        final_dir = ROOT_DIR / 'corpus'
-
+        final_dir = ROOT_DIR
         tmp_file = TMP_DIR / self.filename
         request.urlretrieve(self.url, tmp_file)
-        count = 0
         # Optimisation: Only keep the Python files
         if tarfile.is_tarfile(tmp_file):
             with tarfile.open(tmp_file) as tar:
                 for entry in tar.getmembers():
                     if is_python_file(entry.name):
-                        newname = self.project_name + "-" + self.version + "-" + str(count) + ".py"
                         try:
                             tar.extract(entry, final_dir)
-                            os.rename(final_dir / entry.name, final_dir / newname)
-                            count += 1
+                            file=final_dir / entry.name
+                            with open(file, encoding="latin-1") as f:
+                                cleaned_data = get_cleanData(f.readlines())
+                                try:
+                                    atok = asttokens.ASTTokens(cleaned_data, parse=True)
+                                    for n in ast.walk(atok.tree):
+                                        if not isinstance(n, ast.Module) and not isinstance(n,
+                                                                                            ast.Name) and not isinstance(
+                                            n,
+                                            ast.Load) and not isinstance(
+                                            n, ast.Store) \
+                                                and not isinstance(n, ast.Constant):
+                                            py = vermin.version_strings(vermin.detect(atok.get_text(n)))
+                                            py2 = py.split(',')[0]
+                                            py3 = py.split(',')[1]
+                                            if '~' in py2 and '~' in py3:
+                                                continue
+                                                # PYTHON_VERSIONS['2.0'].add(atok.get_text(n))
+                                            elif '!' in py2:
+                                                PYTHON_VERSIONS[py3.strip()].add(atok.get_text(n))
+                                            elif '3.0' in py3:
+                                                PYTHON_VERSIONS[py2.strip()].add(atok.get_text(n))
+                                except:
+                                    continue
+                            file.unlink()
                         except KeyError:
                             continue
 
@@ -81,14 +125,11 @@ class Release:
             with zipfile.ZipFile(tmp_file) as tmp_zip:
                 for entry in tmp_zip.namelist():
                     if is_python_file(entry):
-                        newname = self.project_name + "-" + self.version + "-" + str(count) + ".py"
                         tmp_zip.extract(entry, final_dir)
-                        os.rename(final_dir / entry, final_dir / newname)
-                        count += 1
                 # tmp_zip.extractall(out_dir, filter(is_python_file, tmp_zip.namelist()))
 
         tmp_file.unlink()
-        return out_dir
+        return PYTHON_VERSIONS
 
 
 class PyPIProject:

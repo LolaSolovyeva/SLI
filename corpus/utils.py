@@ -75,6 +75,23 @@ def find_minversion(features):
     return preliminary
 
 
+def get_cleanData(f):
+    ignore = False
+    strings = 0
+    cleaned_data = ''
+    for line in f:
+        if not line.startswith("#") and "#" not in line:
+            if '"""' in line:
+                strings += 1
+                if strings % 2 == 1:
+                    ignore = True
+                else:
+                    ignore = False
+            if not ignore and '"""' not in line and not line.isspace():
+                cleaned_data += line
+    return cleaned_data
+
+
 def autopct(pct):  # only show the label when it's > 10%
     return ('%.2f' % pct + "%") if pct > 5 else ''
 
